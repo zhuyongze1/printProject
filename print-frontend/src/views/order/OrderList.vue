@@ -90,10 +90,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="160" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="!row.shipped" type="success" link @click="handleShip(row)">标记发货</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -124,24 +125,34 @@
         label-position="left"
       >
         <el-form-item label="客户名称" prop="customerId">
-          <el-autocomplete
-            v-model="form.customerName"
-            :fetch-suggestions="queryCustomerSuggestions"
-            placeholder="请输入客户名称搜索"
-            value-key="customerName"
-            style="width: 100%"
-            @select="handleCustomerSelect"
-          />
+          <div style="display: flex; gap: 8px; width: 100%">
+            <el-autocomplete
+              v-model="form.customerName"
+              :fetch-suggestions="queryCustomerSuggestions"
+              placeholder="搜索或输入新客户名称"
+              value-key="customerName"
+              style="flex: 1"
+              @select="handleCustomerSelect"
+            />
+            <el-button v-if="form.customerName && !form.customerId" type="success" plain @click="handleQuickAddCustomer">
+              新增
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="刀模名称" prop="moldId">
-          <el-autocomplete
-            v-model="form.moldName"
-            :fetch-suggestions="queryMoldSuggestions"
-            placeholder="请输入刀模名称搜索"
-            value-key="moldName"
-            style="width: 100%"
-            @select="handleMoldSelect"
-          />
+          <div style="display: flex; gap: 8px; width: 100%">
+            <el-autocomplete
+              v-model="form.moldName"
+              :fetch-suggestions="queryMoldSuggestions"
+              placeholder="搜索或输入新刀模名称"
+              value-key="moldName"
+              style="flex: 1"
+              @select="handleMoldSelect"
+            />
+            <el-button v-if="form.moldName && !form.moldId" type="success" plain @click="handleQuickAddMold">
+              新增
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="下单日期" prop="orderDate">
           <el-date-picker
@@ -309,9 +320,11 @@ const pagination = reactive({
 })
 
 const rules: FormRules = {
-  customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
-  moldId: [{ required: true, message: '请选择刀模', trigger: 'change' }],
+  customerId: [{ required: false }],
+  moldId: [{ required: false }],
   orderDate: [{ required: true, message: '请选择下单日期', trigger: 'change' }],
+  deliveryNo: [{ required: true, message: '请输入送货单号', trigger: 'blur' }],
+  printName: [{ required: true, message: '请输入印刷名称', trigger: 'blur' }],
   quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }],
   unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }],
 }
@@ -388,6 +401,48 @@ function handleEdit(row: any) {
   form.shipped = !!row.shipped
   form.remark = row.remark || ''
   dialogVisible.value = true
+}
+
+async function handleShip(row: any) {
+  try {
+    await ElMessageBox.confirm(`确认将订单 "${row.orderNo}" 标记为已发货？`, '提示', {
+      type: 'info',
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+    })
+    await updateOrder(row.id, { ...row, shipped: true, deliveryDate: new Date().toISOString().slice(0, 10) })
+    ElMessage.success('已标记为发货')
+    fetchData()
+  } catch {
+    // cancelled
+  }
+}
+
+async function handleQuickAddCustomer() {
+  try {
+    await ElMessageBox.prompt('请输入客户联系电话', '快速新增客户', {
+      inputValue: '',
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+    })
+    // Backend will auto-create on submit
+    ElMessage.success('客户名称已填写，保存订单时将自动创建')
+  } catch {
+    // cancelled
+  }
+}
+
+async function handleQuickAddMold() {
+  try {
+    await ElMessageBox.prompt('请输入刀模尺寸(如: 50×30)', '快速新增刀模', {
+      inputValue: '',
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+    })
+    ElMessage.success('刀模名称已填写，保存订单时将自动创建')
+  } catch {
+    // cancelled
+  }
 }
 
 async function handleView(row: any) {
@@ -482,6 +537,7 @@ async function handleSubmit() {
   try {
     const submitData = {
       ...form,
+      shipped: form.shipped ? 1 : 0,
       amount: Number(computedAmount.value),
     }
 

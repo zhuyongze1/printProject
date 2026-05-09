@@ -83,6 +83,14 @@ public class MoldService {
     }
 
     public String generateLocationCode(KnifeMold mold) {
+        if (mold.getAreaCode() == null || mold.getShelfNo() == null ||
+            mold.getLayerNo() == null || mold.getPositionNo() == null) {
+            // Use user-provided code if individual fields are not set
+            if (mold.getLocationCode() != null) return mold.getLocationCode();
+            return mold.getAreaCode() + "-" + (mold.getShelfNo() != null ? mold.getShelfNo() : "0")
+                    + "-" + (mold.getLayerNo() != null ? mold.getLayerNo() : "0")
+                    + "-" + (mold.getPositionNo() != null ? mold.getPositionNo() : "0");
+        }
         try {
             String area = mold.getAreaCode();
             String shelf = String.format("%02d", Integer.parseInt(mold.getShelfNo()));

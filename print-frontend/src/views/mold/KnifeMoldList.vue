@@ -124,11 +124,45 @@
         </template>
 
         <el-form-item label="型号" prop="model">
-          <el-input v-model="form.model" placeholder="请输入型号" />
+          <el-input v-model="form.model" placeholder="选择形状并输入尺寸后自动生成" :disabled="form.shapeType !== 'CUSTOM'" />
+          <div v-if="form.model" class="auto-gen-hint">自动生成</div>
         </el-form-item>
-        <el-form-item label="位置编码" prop="locationCode">
-          <el-input v-model="form.locationCode" placeholder="请输入位置编码" />
+
+        <!-- Location Code Fields -->
+        <el-divider content-position="left">位置信息</el-divider>
+        <el-row :gutter="12">
+          <el-col :span="6">
+            <el-form-item label="区域" prop="areaCode">
+              <el-select v-model="form.areaCode" placeholder="区域" @change="updateLocationPreview">
+                <el-option label="A区" value="A" />
+                <el-option label="B区" value="B" />
+                <el-option label="C区" value="C" />
+                <el-option label="D区" value="D" />
+                <el-option label="E区" value="E" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="货架" prop="shelfNo">
+              <el-input-number v-model="form.shelfNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="层" prop="layerNo">
+              <el-input-number v-model="form.layerNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="位置" prop="positionNo">
+              <el-input-number v-model="form.positionNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="位置编码">
+          <el-tag type="info">{{ locationPreview || '请填写位置信息' }}</el-tag>
+          <span class="auto-gen-hint" style="margin-left: 8px">保存时自动生成</span>
         </el-form-item>
+
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
             <el-option label="在库" value="IN_STOCK" />
@@ -148,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMoldList, createMold, updateMold, deleteMold, printMoldLabel } from '@/api/mold'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -158,6 +192,10 @@ interface MoldForm {
   shapeType: string
   model: string
   locationCode: string
+  areaCode: string
+  shelfNo: number | null
+  layerNo: number | null
+  positionNo: number | null
   status: string
   length: number | null
   width: number | null
@@ -170,6 +208,10 @@ const defaultForm: MoldForm = {
   shapeType: 'RECTANGLE',
   model: '',
   locationCode: '',
+  areaCode: 'A',
+  shelfNo: 1,
+  layerNo: 1,
+  positionNo: 1,
   status: 'IN_STOCK',
   length: null,
   width: null,
@@ -192,6 +234,47 @@ const searchForm = reactive({
 })
 
 const form = reactive<MoldForm>({ ...defaultForm })
+
+const locationPreview = ref('')
+
+// Auto-set area and generate model when shape type changes
+watch(() => form.shapeType, (val) => {
+  const areaMap: Record<string, string> = { RECTANGLE: 'A', CIRCLE: 'B', OVAL: 'C', CUSTOM: 'D' }
+  form.areaCode = areaMap[val] || 'A'
+  updateModelPreview()
+})
+
+// Auto-generate model preview when dimensions change
+watch([() => form.length, () => form.width, () => form.diameter], () => {
+  updateModelPreview()
+})
+
+function updateLocationPreview() {
+  if (form.areaCode && form.shelfNo != null && form.layerNo != null && form.positionNo != null) {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    locationPreview.value = `${form.areaCode}-${pad(form.shelfNo)}-${pad(form.layerNo)}-${pad(form.positionNo)}`
+  } else {
+    locationPreview.value = ''
+  }
+}
+
+function updateModelPreview() {
+  if (form.shapeType === 'RECTANGLE' || form.shapeType === 'SQUARE') {
+    if (form.length && form.width) {
+      form.model = `${form.length}×${form.width}`
+    }
+  } else if (form.shapeType === 'CIRCLE') {
+    if (form.diameter) {
+      form.model = `Φ${form.diameter}`
+    }
+  } else if (form.shapeType === 'OVAL') {
+    if (form.length && form.width) {
+      form.model = `OV-${form.length}×${form.width}`
+    }
+  } else if (form.shapeType === 'CUSTOM') {
+    // Keep user-entered model
+  }
+}
 
 const pagination = reactive({
   page: 1,
@@ -262,6 +345,9 @@ function handleAdd() {
   isEdit.value = false
   editId.value = null
   Object.assign(form, defaultForm)
+  form.shapeType = 'RECTANGLE'
+  form.areaCode = 'A'
+  updateLocationPreview()
   dialogVisible.value = true
 }
 
@@ -272,11 +358,16 @@ function handleEdit(row: any) {
   form.shapeType = row.shapeType || 'RECTANGLE'
   form.model = row.model || ''
   form.locationCode = row.locationCode || ''
+  form.areaCode = row.areaCode || 'A'
+  form.shelfNo = row.shelfNo ?? 1
+  form.layerNo = row.layerNo ?? 1
+  form.positionNo = row.positionNo ?? 1
   form.status = row.status || 'IN_STOCK'
   form.length = row.length ?? null
   form.width = row.width ?? null
   form.diameter = row.diameter ?? null
   form.remark = row.remark || ''
+  updateLocationPreview()
   dialogVisible.value = true
 }
 
@@ -310,7 +401,14 @@ async function handleSubmit() {
 
   submitLoading.value = true
   try {
-    const submitData = { ...form }
+    // Auto-generate mold name with dimensions
+    const dimStr = form.model || ''
+    const nameBase = form.moldName || '刀模'
+    const submitData: Record<string, any> = {
+      ...form,
+      moldName: dimStr ? `${nameBase}(${dimStr})` : nameBase,
+      locationCode: locationPreview.value || form.locationCode,
+    }
     // Clean shape-specific fields
     if (form.shapeType === 'CIRCLE') {
       submitData.length = null
@@ -347,5 +445,10 @@ onMounted(() => {
 <style scoped>
 .page-container {
   padding: 24px;
+}
+.auto-gen-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 </style>
