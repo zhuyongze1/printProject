@@ -22,7 +22,7 @@ public class KnifeMold {
     private String layerNo;
     private String positionNo;
     private String locationCode;
-    private Integer status;
+    private String status;
     private String remark;
 
     @TableField(fill = FieldFill.INSERT)

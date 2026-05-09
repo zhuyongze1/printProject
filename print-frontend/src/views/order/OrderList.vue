@@ -134,8 +134,8 @@
               style="flex: 1"
               @select="handleCustomerSelect"
             />
-            <el-button v-if="form.customerName && !form.customerId" type="success" plain @click="handleQuickAddCustomer">
-              新增
+            <el-button type="success" plain @click="handleQuickAddCustomer">
+              新增客户
             </el-button>
           </div>
         </el-form-item>
@@ -149,8 +149,8 @@
               style="flex: 1"
               @select="handleMoldSelect"
             />
-            <el-button v-if="form.moldName && !form.moldId" type="success" plain @click="handleQuickAddMold">
-              新增
+            <el-button type="success" plain @click="handleQuickAddMold">
+              新增刀模
             </el-button>
           </div>
         </el-form-item>
@@ -176,6 +176,7 @@
                 v-model="form.quantity"
                 :min="0"
                 :precision="0"
+                controls-position="right"
                 style="width: 100%"
               />
             </el-form-item>
@@ -187,6 +188,7 @@
                 :min="0"
                 :precision="2"
                 :step="0.1"
+                controls-position="right"
                 style="width: 100%"
               />
             </el-form-item>

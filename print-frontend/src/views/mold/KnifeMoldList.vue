@@ -131,7 +131,7 @@
         <!-- Location Code Fields -->
         <el-divider content-position="left">位置信息</el-divider>
         <el-row :gutter="12">
-          <el-col :span="6">
+          <el-col :span="12">
             <el-form-item label="区域" prop="areaCode">
               <el-select v-model="form.areaCode" placeholder="区域" @change="updateLocationPreview">
                 <el-option label="A区" value="A" />
@@ -142,19 +142,21 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="货架" prop="shelfNo">
-              <el-input-number v-model="form.shelfNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+          <el-col :span="12">
+            <el-form-item label="货架号" prop="shelfNo">
+              <el-input-number v-model="form.shelfNo" :min="1" :max="99" :precision="0" controls-position="right" style="width: 100%" @change="updateLocationPreview" />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="层" prop="layerNo">
-              <el-input-number v-model="form.layerNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="层号" prop="layerNo">
+              <el-input-number v-model="form.layerNo" :min="1" :max="99" :precision="0" controls-position="right" style="width: 100%" @change="updateLocationPreview" />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="位置" prop="positionNo">
-              <el-input-number v-model="form.positionNo" :min="1" :max="99" :precision="0" style="width: 100%" @change="updateLocationPreview" />
+          <el-col :span="12">
+            <el-form-item label="位置号" prop="positionNo">
+              <el-input-number v-model="form.positionNo" :min="1" :max="99" :precision="0" controls-position="right" style="width: 100%" @change="updateLocationPreview" />
             </el-form-item>
           </el-col>
         </el-row>
