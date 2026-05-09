@@ -31,6 +31,23 @@ npm run build     # production build to dist/
 - Schema + seed: `mysql -u root -pboss.1234 --default-character-set=utf8mb4 -D print_management -e "SOURCE sql/01-schema.sql; SOURCE sql/02-seed.sql;"`
 - Login credentials: `admin` / `admin123`
 
+### Git Remote
+```bash
+git remote add origin https://github.com/zhuyongze1/printProject.git
+git push -u origin master
+```
+
+## Project Architecture
+
+Monorepo with two top-level projects:
+
+```
+printProject/
+├── print-backend/      # Spring Boot REST API
+├── print-frontend/     # Vue 3 SPA
+└── sql/                # Database scripts
+```
+
 ## Project Architecture
 
 Monorepo with two top-level projects:
@@ -117,3 +134,33 @@ Key patterns:
 - Frontend route permission guard (dynamic menu filtering by user permissions)
 - Frontend button-level permission (`v-if="hasPermission('order:create')"`)
 - Redis integration (for v2: token blacklist, rate limiting, cache)
+
+## Known Issues & Fixes (2026-05-09)
+
+### KnifeMold entity status type mismatch
+- `KnifeMold.java` line 25: `private Integer status;` should be `private String status;`
+- DB column is `VARCHAR(20)`, entity had `Integer`, causing deserialization failure on create
+- **Fix**: Changed to `String`
+
+### Mold location code null safety
+- `MoldService.generateLocationCode()` was calling `Integer.parseInt()` on potentially null `shelfNo`/`layerNo`/`positionNo`
+- **Fix**: Added null check fallback
+
+### GitHub language detection
+- `.agents/` directory (Claude Code skills) contained Python files that skewed GitHub's language stats
+- **Fix**: Added `.agents/` to `.gitignore`, removed from git tracking, added `.gitattributes`
+
+### Curl testing with Chinese characters
+- On Windows bash, `curl -d '{"name":"中文"}'` sends GBK encoding, not UTF-8
+- Backend returns `Invalid UTF-8 start byte` error
+- **Fix**: Use `--data-binary @file.json` with UTF-8 encoded file, or use ASCII-only test data
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `Port 8080 already in use` | `cmd /c "netstat -ano \| findstr :8080 \| findstr LISTENING"` → find PID → `cmd /c "taskkill /F /PID <PID>"` |
+| `maven.multiModuleProjectDirectory` error | Must use JDK 21, not 26. Re-run with `JAVA_HOME=D:\IDEA\JDK\jdk-21.0.11` |
+| MySQL `mysql` command not found | Use full path: `"C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe"` |
+| Frontend proxy not working | Check Vite config: `server.proxy` must point to `http://localhost:8080` |
+| Entity field type mismatch | Check DB column type vs Java entity field type (especially String vs Integer for status/enum fields) |
