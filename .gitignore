@@ -1,0 +1,29 @@
+# Java
+*.class
+*.jar
+*.war
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.iml
+.idea/
+
+# Node
+node_modules/
+dist/
+
+# VS Code
+.vscode/
+
+# Env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# MySQL init script (only committed through sql/ dir)
