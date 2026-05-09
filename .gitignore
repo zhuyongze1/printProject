@@ -27,3 +27,11 @@ Thumbs.db
 logs/
 
 # MySQL init script (only committed through sql/ dir)
+
+# Claude Code skills (Python scripts that skew language detection)
+.agents/
+
+# Generated files
+skills-lock.json
+auto-imports.d.ts
+components.d.ts

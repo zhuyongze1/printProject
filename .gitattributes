@@ -1,0 +1,8 @@
+# Force GitHub Linguist to detect this as a Java project
+*.java linguist-language=Java
+*.sql linguist-language=SQL
+*.vue linguist-language=Vue
+*.ts linguist-language=TypeScript
+# Exclude generated configs from language stats
+auto-imports.d.ts linguist-vendored
+components.d.ts linguist-vendored
